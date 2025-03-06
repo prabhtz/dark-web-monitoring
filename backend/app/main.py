@@ -1,17 +1,17 @@
 from fastapi import FastAPI
-from app.routes import scrape
-from app.config import setup_tor_proxy
+from fastapi.middleware.cors import CORSMiddleware
 
-# Initialize FastAPI app
 app = FastAPI()
 
-# Setup Tor Proxy
-# setup_tor_proxy()
 
-# Include routes
-app.include_router(scrape.router)
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
-def root():
-    return {"message": "Dark Web Monitoring API Running"}
+def read_root():
+    return {"message": "CORS is working!"}
