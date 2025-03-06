@@ -36,7 +36,7 @@ def extract_threat_links(soup, site_name, keywords):
 
 def scrape_sites(keywords=None):
     """Scrape sources for the given keywords using main pages & search queries."""
-    keywords = keywords or DEFAULT_THREAT_KEYWORDS
+    keywords = keywords or THREAT_KEYWORDS
     results = []
 
     for site, info in SCRAPABLE_SITES.items():
