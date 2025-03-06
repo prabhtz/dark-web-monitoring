@@ -9,28 +9,29 @@ interface ThreatTableProps {
 const ThreatTable: React.FC<ThreatTableProps> = ({ data }) => {
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-700 shadow-lg">
-      <Table className="w-full border-collapse">
+
+      <Table className="w-full table-fixed border-collapse">
         <TableHead>
           <TableRow className="bg-gray-800 text-white uppercase text-sm tracking-wider">
-            <TableCell className="p-4 text-lg font-bold whitespace-nowrap w-[15%]">Source</TableCell>
-            <TableCell className="p-4 text-lg font-bold whitespace-nowrap w-[50%]">Threat URL</TableCell>
-            <TableCell className="p-4 text-lg font-bold whitespace-nowrap w-[35%]">Description</TableCell>
+            <TableCell className="p-4 text-lg font-bold w-1/6">Source</TableCell>
+            <TableCell className="p-4 text-lg font-bold w-3/6">Threat URL</TableCell>
+            <TableCell className="p-4 text-lg font-bold w-2/6">Description</TableCell>
           </TableRow>
         </TableHead>
 
         <TableBody>
           {data.map((item, index) => (
             <TableRow key={index} className="border-b border-gray-700">
-              <TableCell className="p-4 w-[15%] whitespace-nowrap">{item.site}</TableCell>
+              <TableCell className="p-4 w-1/6 truncate">{item.site}</TableCell>
 
-              <TableCell className="p-4 w-[50%] break-words">
+              <TableCell className="p-4 w-3/6 truncate">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <a
                       href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-400 break-words inline-block truncate hover:underline"
+                      className="text-blue-400 inline-block truncate hover:underline"
                     >
                       {item.url}
                     </a>
@@ -39,7 +40,7 @@ const ThreatTable: React.FC<ThreatTableProps> = ({ data }) => {
                 </Tooltip>
               </TableCell>
 
-              <TableCell className="p-4 w-[35%] break-words">
+              <TableCell className="p-4 w-2/6 truncate">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="block truncate hover:whitespace-normal">
