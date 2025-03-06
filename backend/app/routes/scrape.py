@@ -1,14 +1,19 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+from typing import List, Optional
 from app.services.scraper import scrape_sites
 
 router = APIRouter()
 
 
-@router.get("/scrape-all")
-def scrape_all():
+@router.get("/scrape")
+def scrape(keywords: Optional[List[str]] = Query(None)):
     """
-    Scrape top threat intelligence sources from Surface & Dark Web.
-    Returns a list of valid threat-related URLs.
+    Scrape both main pages and search results from the best threat intelligence sources.
+    If no keywords are provided, default ones are used.
     """
-    scraped_results = scrape_sites()
-    return {"scraped_data": scraped_results, "total_links_found": len(scraped_results)}
+    scraped_results = scrape_sites(keywords)
+    return {
+        "keywords_used": keywords or "Default threat keywords",
+        "scraped_data": scraped_results,
+        "total_links_found": len(scraped_results),
+    }
