@@ -5,15 +5,15 @@ import socket
 SOCKS_PORT = 9050
 
 
-def setup_tor_proxy():
-    """Setup SOCKS5 proxy for Tor"""
-    socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", SOCKS_PORT)
-    socket.socket = socks.socksocket
+# def setup_tor_proxy():
+#     """Setup SOCKS5 proxy for Tor"""
+#     socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", SOCKS_PORT)
+#     socket.socket = socks.socksocket
 
 
 SCRAPABLE_SITES = {
     "Ahmia": {"url": "https://ahmia.fi/", "search": "https://ahmia.fi/search/?q="},
-    "OnionLand": {"url": "http://onionlandsearchengine.com", "search": "http://onionlandsearchengine.com/search?q="},
+    "OnionEngine": {"url": "https://onionengine.com", "search": "https://onionengine.com/search.php?search="},
     "Dark.Fail": {"url": "https://dark.fail/", "search": None},  # No search function
     "Dread Forum": {"url": "http://dreadditevelidot.onion", "search": None},  # Requires login
     "DeepPaste": {"url": "http://deeppaste.onion", "search": None},  # No search function

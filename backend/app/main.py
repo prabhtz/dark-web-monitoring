@@ -6,7 +6,7 @@ from app.config import setup_tor_proxy
 app = FastAPI()
 
 # Setup Tor Proxy
-setup_tor_proxy()
+# setup_tor_proxy()
 
 # Include routes
 app.include_router(scrape.router)
