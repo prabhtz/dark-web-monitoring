@@ -11,13 +11,18 @@ def setup_tor_proxy():
     socket.socket = socks.socksocket
 
 
-# URLs of sites to scrape
 SCRAPABLE_SITES = {
-    "Ahmia": "https://ahmia.fi/",
-    "OnionLand": "http://onionlandsearchengine.com",
-    "Shodan": "https://www.shodan.io/",
-    "Have I Been Pwned": "https://haveibeenpwned.com/",
-    "Cybercrime Tracker": "https://cybercrime-tracker.net/",
-    "Mitre ATT&CK Threat Actors": "https://attack.mitre.org/groups/",
-    "ThreatFox": "https://threatfox.abuse.ch/",
+    "Ahmia": {"url": "https://ahmia.fi/", "search": "https://ahmia.fi/search?q="},
+    "OnionLand": {"url": "http://onionlandsearchengine.com", "search": "http://onionlandsearchengine.com/search?q="},
+    "Dark.Fail": {"url": "https://dark.fail/", "search": "https://dark.fail/"},
+    "Dread Forum": {"url": "http://dreadditevelidot.onion", "search": "http://dreadditevelidot.onion"},
+    "DeepPaste": {"url": "http://deeppaste.onion", "search": "http://deeppaste.onion"},
+    "NVD": {"url": "https://nvd.nist.gov/", "search": "https://nvd.nist.gov/vuln/search/results?query="},
+    "ExploitDB": {"url": "https://www.exploit-db.com/", "search": "https://www.exploit-db.com/search?q="},
+    "Cybercrime Tracker": {"url": "https://cybercrime-tracker.net/", "search": "https://cybercrime-tracker.net/"},
+    "Mitre ATT&CK": {"url": "https://attack.mitre.org/groups/", "search": "https://attack.mitre.org/groups/"},
 }
+
+THREAT_KEYWORDS = ["exploit", "ransomware", "leak", "darknet", "hack", "breach", "malware", "data dump", "credential"]
+
+TOR_PROXY = "socks5h://127.0.0.1:9050"
