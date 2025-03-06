@@ -8,12 +8,13 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi (>=0.115.11,<0.116.0)",
+    "fastapi[all] (>=0.115.11,<0.116.0)",
     "uvicorn (>=0.34.0,<0.35.0)",
     "requests (>=2.32.3,<3.0.0)",
     "beautifulsoup4 (>=4.13.3,<5.0.0)",
     "stem (>=1.8.2,<2.0.0)",
-    "pysocks (>=1.7.1,<2.0.0)"
+    "pysocks (>=1.7.1,<2.0.0)",
+    "starlette (>=0.46.0,<0.47.0)"
 ]
 
 
