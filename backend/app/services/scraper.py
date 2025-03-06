@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from app.config import SCRAPABLE_SITES, DEFAULT_THREAT_KEYWORDS, TOR_PROXY
+from app.config import SCRAPABLE_SITES, THREAT_KEYWORDS, TOR_PROXY
 
 
 def fetch_page(url):
