@@ -791,6 +791,24 @@ files = [
 all = ["flake8 (>=7.1.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.6.2)"]
 
 [[package]]
+name = "intelx"
+version = "0.6.3"
+description = "IntelX is a Python command-line utility and API wrapper for intelx.io, made to perform any kind of open-source intelligence."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "intelx-0.6.3-py3-none-any.whl", hash = "sha256:45e44d7af00c201afd13f453057cdbb7666a7654866417907846078b8e683422"},
+    {file = "intelx-0.6.3.tar.gz", hash = "sha256:ca2743e9e78674ceeca2dd2f44eb0e72dc647cfb0e81c9bbfccf0809afd44443"},
+]
+
+[package.dependencies]
+pygments = "*"
+requests = "*"
+tabulate = "*"
+termcolor = "*"
+
+[[package]]
 name = "itsdangerous"
 version = "2.2.0"
 description = "Safely pass data to untrusted environments and back."
@@ -1731,6 +1749,36 @@ files = [
 ]
 
 [[package]]
+name = "tabulate"
+version = "0.9.0"
+description = "Pretty-print tabular data"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f"},
+    {file = "tabulate-0.9.0.tar.gz", hash = "sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c"},
+]
+
+[package.extras]
+widechars = ["wcwidth"]
+
+[[package]]
+name = "termcolor"
+version = "2.5.0"
+description = "ANSI color formatting for output in terminal"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "termcolor-2.5.0-py3-none-any.whl", hash = "sha256:37b17b5fc1e604945c2642c872a3764b5d547a48009871aea3edd3afa180afb8"},
+    {file = "termcolor-2.5.0.tar.gz", hash = "sha256:998d8d27da6d48442e8e1f016119076b690d962507531df4890fcd2db2ef8a6f"},
+]
+
+[package.extras]
+tests = ["pytest", "pytest-cov"]
+
+[[package]]
 name = "typer"
 version = "0.15.2"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
@@ -2239,4 +2287,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "85e0ac2bfc731fbc8fae87d48027479508d12b9687003aae96bcfeca3df04658"
+content-hash = "6708b0273fc88e256b6802901dc478d597231cc571a909c010104c793b8bc423"
