@@ -1,53 +1,57 @@
 import requests
+import logging
+from bs4 import BeautifulSoup
 
-ONION_SEARCH_ENGINES = {
-    "Ahmia": "https://ahmia.fi/search/",
-    "OnionLand": "http://onionlandsearchengine.com/search?q=",
-}
+# Onion search engines
+AHMIA_URL = "https://ahmia.fi/search/"
+ONIONLAND_URL = "http://onionlandsearchengine.com/search/"
 
 
 def search_ahmia(query):
-    """Fetch Dark Web results from Ahmia"""
-    print(f"Searching Ahmia for {query}...")
-    url = f"https://ahmia.fi/search/?q={query}"
+    """
+    Searches Ahmia (Dark Web Search Engine).
 
+    Args:
+        query (str): Search term.
+
+    Returns:
+        list: Search results.
+    """
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(f"{AHMIA_URL}?q={query}")
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
 
-        # Check for valid JSON response
-        if response.status_code == 200 and response.headers.get("Content-Type") == "application/json":
-            return response.json()
+        results = []
+        for result in soup.select("li.result h4 a"):
+            results.append({"title": result.text, "url": result["href"]})
 
-        print(f"Ahmia returned non-JSON response: {response.text[:100]}")
-        return None
-
-    except requests.exceptions.RequestException as e:
-        print(f"Ahmia API Error: {e}")
-        return None
+        return results
+    except requests.RequestException as e:
+        logging.error(f"Ahmia search failed: {e}")
+        return []
 
 
 def search_onionland(query):
-    """Fetch Hidden Services results from OnionSearch"""
-    print(f"Searching OnionSearch for {query}...")
+    """
+    Searches OnionLand search engine.
 
-    url = f"http://onionlandsearchengine.com/search?q={query}&submit=Search"
+    Args:
+        query (str): Search term.
 
+    Returns:
+        list: Search results.
+    """
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(f"{ONIONLAND_URL}?q={query}")
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
 
-        # Check if response is empty or non-JSON
-        if response.status_code != 200:
-            print(f"OnionSearch API Error: {response.status_code}")
-            return None
+        results = []
+        for result in soup.select("h2.title a"):
+            results.append({"title": result.text, "url": result["href"]})
 
-        content_type = response.headers.get("Content-Type", "")
-
-        if "application/json" in content_type:
-            return response.json()
-
-        print(f"OnionSearch returned non-JSON response: {response.text[:100]}")
-        return None
-
-    except requests.exceptions.RequestException as e:
-        print(f"OnionSearch API Error: {e}")
-        return None
+        return results
+    except requests.RequestException as e:
+        logging.error(f"OnionLand search failed: {e}")
+        return []

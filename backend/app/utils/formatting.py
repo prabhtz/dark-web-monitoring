@@ -87,44 +87,34 @@ def normalize_darkweb_data(source, raw_data, query_type):
 
     risk_score, risk_category = calculate_darkweb_risk_score(source, raw_data)
 
-    if source == "IntelX":
-        formatted_results = []
-        for record in raw_data:
-            formatted_results.append(
-                {
-                    "title": record.get("title", "Unknown"),
-                    "date": record.get("date"),
-                    "preview": record.get("preview"),
-                    "intelx_link": record.get("intelx_link"),
-                    "onion_links": record.get("onion_links"),
-                }
-            )
+    formatted_results = []
 
-        return {
-            "source": source,
-            "type": query_type,
-            "risk_score": risk_score,
-            "risk_category": risk_category,
-            "data": formatted_results,
-        }
+    for record in raw_data:
+        formatted_results.append(
+            {
+                "title": record.get("title", "Unknown"),
+                "date": record.get("date"),
+                "preview": record.get("preview", "No preview available"),
+                "onion_links": record.get("onion_links", []),
+                "intelx_link": record.get("intelx_link") if source == "IntelX" else None,
+                "description": record.get("description", "No details available"),
+                "tags": record.get("tags", []),
+                "first_seen": record.get("first_seen"),
+                "last_seen": record.get("last_seen"),
+                "leaked_data": record.get("leak_data", []),
+                "related_actors": record.get("actors", []),
+                "last_analysis_date": (
+                    datetime.utcfromtimestamp(record.get("timestamp", 0)).strftime("%Y-%m-%d %H:%M:%S")
+                    if record.get("timestamp")
+                    else None
+                ),
+            }
+        )
 
     return {
         "source": source,
         "type": query_type,
         "risk_score": risk_score,
         "risk_category": risk_category,
-        "data": {
-            "onion_urls": raw_data.get("urls", []),
-            "description": raw_data.get("description", "No details available"),
-            "tags": raw_data.get("tags", []),
-            "first_seen": raw_data.get("first_seen"),
-            "last_seen": raw_data.get("last_seen"),
-            "leaked_data": raw_data.get("leak_data", []),
-            "related_actors": raw_data.get("actors", []),
-            "last_analysis_date": (
-                datetime.utcfromtimestamp(raw_data.get("timestamp", 0)).strftime("%Y-%m-%d %H:%M:%S")
-                if raw_data.get("timestamp")
-                else None
-            ),
-        },
+        "data": formatted_results,
     }
