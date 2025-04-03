@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Dashboard from "./pages/Dashboard";
+// import Search from "./pages/Search";
 
 const queryClient = new QueryClient();
 
