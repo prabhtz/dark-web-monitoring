@@ -56,6 +56,42 @@ def fetch_virustotal(query, query_type):
         return {"error": str(e)}
 
 
+def calculate_otx_risk_score(pulses, malware_families, analysis):
+    """Assigns a risk score and category based on OTX data."""
+    score = 0  # Start with no risk
+
+    # Pulses indicate threat reputation
+    pulse_count = len(pulses)
+    if pulse_count > 10:
+        score += 40
+    elif pulse_count > 5:
+        score += 25
+    elif pulse_count > 0:
+        score += 10
+
+    # Malware families increase risk
+    if malware_families:
+        score += 30
+
+    # Analysis Results
+    if "malware" in analysis:
+        score += 30
+    elif "suspicious" in analysis:
+        score += 15
+
+    # Final Risk Category
+    if score >= 80:
+        risk_category = "Critical"
+    elif score >= 50:
+        risk_category = "High"
+    elif score >= 20:
+        risk_category = "Medium"
+    else:
+        risk_category = "Low"
+
+    return min(score, 100), risk_category
+
+
 def fetch_otx(query, query_type):
     """Fetch OSINT threat intelligence from OTX AlienVault"""
     print(f"🔍 Fetching OTX AlienVault data for {query} ({query_type})...")
@@ -79,25 +115,41 @@ def fetch_otx(query, query_type):
         if not response:
             return None
 
+        # Extract details
+        pulses = response.get("pulse_info", {}).get("pulses", [])
+        malware_families = response.get("malware_families", [])
+        related_indicators = response.get("related", {}).get("indicators", [])
+        first_seen = response.get("first_seen")
+        last_seen = response.get("last_seen")
+        threat_tags = response.get("tags", [])
+
         parsed_data = {
             "indicator": query,
             "type": query_type,
-            "pulses": response.get("pulse_info", {}).get("pulses", []),
-            "related_indicators": response.get("related", {}).get("indicators", []),
-            "first_seen": response.get("first_seen"),
-            "last_seen": response.get("last_seen"),
-            "threat_tags": response.get("tags", []),
+            "pulses": pulses,
+            "malware_families": malware_families,
+            "related_indicators": related_indicators,
+            "first_seen": first_seen,
+            "last_seen": last_seen,
+            "threat_tags": threat_tags,
         }
 
-        if query_type == "url" or query_type == "hash":
+        # Additional Analysis for URL and Hash
+        if query_type in ["url", "hash"]:
             analysis = otx_client.get_indicator_details_full(indicator_type, query)
             parsed_data["analysis"] = analysis.get("analysis", {})
+
+        # Calculate Risk Score
+        risk_score, risk_category = calculate_otx_risk_score(pulses, malware_families, parsed_data.get("analysis", {}))
+
+        parsed_data["risk_score"] = risk_score
+        parsed_data["risk_category"] = risk_category
 
         print(f"OTX AlienVault response: {parsed_data}")  # DEBUG LOG
         return parsed_data
 
     except Exception as e:
-        print(f"OTX AlienVault Error: {e}")
+        print(f"⚠️ OTX AlienVault Error: {e}")
         return None
 
 

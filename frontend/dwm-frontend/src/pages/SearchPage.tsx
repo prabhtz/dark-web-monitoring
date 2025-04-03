@@ -1,17 +1,10 @@
 import OSINTSearch from "@/components/OSINTSearch";
 import DarkWebSearch from "@/components/DarkWebSearch";
 
-export default function Dashboard() {
+export default function SearchPage() {
   return (
     <div className="container mx-auto px-6 py-8">
-      <h1 className="text-3xl font-bold text-center mb-6">
-        Threat Intelligence Dashboard
-      </h1>
-
-      {/* OSINT Section */}
       <OSINTSearch />
-
-      {/* Dark Web Section */}
       <DarkWebSearch />
     </div>
   );

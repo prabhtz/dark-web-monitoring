@@ -1,5 +1,5 @@
 from datetime import datetime
-from app.utils.risk_scoring import calculate_risk_score, calculate_darkweb_risk_score
+from app.utils.risk_scoring import calculate_osint_risk_score, calculate_darkweb_risk_score
 
 
 from datetime import datetime
@@ -11,7 +11,7 @@ def normalize_osint_data(source, raw_data, query_type):
     if not raw_data:
         return None
 
-    risk_score, risk_category = calculate_risk_score(source, raw_data)
+    risk_score, risk_category = calculate_osint_risk_score(source, raw_data)
 
     normalized_data = {
         "source": source,
@@ -81,19 +81,17 @@ def normalize_osint_data(source, raw_data, query_type):
 
 def normalize_darkweb_data(source, raw_data, query_type):
     """Convert Dark Web API response to a structured format with risk scoring."""
-
     if not raw_data:
         return None
 
     risk_score, risk_category = calculate_darkweb_risk_score(source, raw_data)
 
     formatted_results = []
-
     for record in raw_data:
         formatted_results.append(
             {
                 "title": record.get("title", "Unknown"),
-                "date": record.get("date"),
+                "date": datetime.utcnow().isoformat(),
                 "preview": record.get("preview", "No preview available"),
                 "onion_links": record.get("onion_links", []),
                 "intelx_link": record.get("intelx_link") if source == "IntelX" else None,
