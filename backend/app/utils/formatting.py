@@ -1,3 +1,5 @@
+import re
+
 from datetime import datetime
 from app.utils.risk_scoring import (
     calculate_osint_risk_score,
@@ -146,3 +148,17 @@ def normalize_abuseipdb_blacklist(raw_list):
         )
 
     return results
+
+
+def clean_text(text: str) -> str:
+    """
+    Cleans and normalizes text by removing excess whitespace, control characters,
+    and unwanted symbols. Keeps the text ASCII-compatible and printable.
+    """
+    if not text:
+        return ""
+
+    # Remove non-printable characters and excessive whitespace
+    cleaned = re.sub(r"[^\x20-\x7E]+", " ", text)  # Keep ASCII printable characters
+    cleaned = re.sub(r"\s+", " ", cleaned)  # Collapse all whitespace
+    return cleaned.strip()
