@@ -45,56 +45,155 @@ def fetch_greynoise(ip):
 
 
 def fetch_virustotal(query, query_type):
+    import vt
+
+
+from datetime import datetime
+
+
+def fetch_virustotal(query, query_type):
     try:
-        if query_type == "url":
-            query_id = vt.url_id(query)
-            return vt_client.get_object(f"/urls/{query_id}")
-        elif query_type == "hash":
-            return vt_client.get_object(f"/files/{query}")
-        return None
+        with vt.Client(API_KEYS["VirusTotal"]) as client:
+            if query_type == "url":
+                query_id = vt.url_id(query)
+                obj = client.get_object(f"/urls/{query_id}")
+            elif query_type == "hash":
+                obj = client.get_object(f"/files/{query}")
+            else:
+                return None
+
+            # Extract scan results
+            response = obj
+            stats = response.get("last_analysis_stats", {})
+            scans = response.get("last_analysis_results", {})
+
+            print(f"VirusTotal response: {response}")  # DEBUG LOG
+
+            # Basic detection counts
+            malicious = stats.get("malicious", 0)
+            suspicious = stats.get("suspicious", 0)
+            undetected = stats.get("undetected", 0)
+            harmless = stats.get("harmless", 0)
+
+            # Pull out key vendors for insights
+            vendor_detections = {}
+            key_vendors = [
+                "Microsoft",
+                "Kaspersky",
+                "Symantec",
+                "ClamAV",
+                "BitDefender",
+            ]
+            for vendor in key_vendors:
+                result = scans.get(vendor, {}).get("result")
+                if result:
+                    vendor_detections[vendor] = result
+
+            # Get last analysis time
+            last_analysis_time = response.get("last_analysis_date")
+            last_analysis_time = (
+                datetime.utcfromtimestamp(last_analysis_time).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+                if last_analysis_time
+                else None
+            )
+
+            return {
+                "malicious_votes": malicious,
+                "suspicious_votes": suspicious,
+                "undetected": undetected,
+                "harmless": harmless,
+                "vendor_detections": vendor_detections,
+                "last_analysis_time": last_analysis_time,
+                "total_scans": sum(stats.values()),
+            }
+
     except Exception as e:
         return {"error": str(e)}
 
 
 def calculate_otx_risk_score(pulses, malware_families, analysis):
-    """Assigns a risk score and category based on OTX data."""
-    score = 0  # Start with no risk
+    """
+    Improved Risk Scoring for OTX Data (Normalized to 1–10)
+    - Now better supports IP indicators (no 'analysis')
+    - Incorporates threat tags within pulses
+    """
+    score = 0
 
-    # Pulses indicate threat reputation
+    # Count pulses and unique threat tags
     pulse_count = len(pulses)
-    if pulse_count > 10:
-        score += 40
-    elif pulse_count > 5:
-        score += 25
+    threat_tags = set()
+    pulse_sources = set()
+
+    for pulse in pulses:
+        pulse_tags = pulse.get("tags", [])
+        author = pulse.get("author", {}).get("username", "")
+        pulse_sources.add(author)
+
+        # Collect threat-relevant tags
+        for tag in pulse_tags:
+            if tag and tag.lower() in {
+                "malicious",
+                "botnet",
+                "portscan",
+                "ssh",
+                "telnet",
+                "honeypot",
+                "bruteforce",
+            }:
+                threat_tags.add(tag.lower())
+
+    # Pulses
+    if pulse_count >= 10:
+        score += 30
+    elif pulse_count >= 5:
+        score += 20
     elif pulse_count > 0:
         score += 10
 
-    # Malware families increase risk
+    # Threat tags from pulses
+    if len(threat_tags) >= 3:
+        score += 30
+    elif len(threat_tags) > 0:
+        score += 20
+
+    # Unique pulse authors (diverse sources)
+    if len(pulse_sources) >= 3:
+        score += 10
+
+    # Malware families
     if malware_families:
-        score += 30
+        score += 20
 
-    # Analysis Results
+    # Analysis info for URL/File only
     if "malware" in analysis:
-        score += 30
+        score += 20
     elif "suspicious" in analysis:
-        score += 15
+        score += 10
 
-    # Final Risk Category
-    if score >= 80:
+    # Normalize to 1–10 range
+    raw_score = min(score, 100)
+    normalized_score = max(1, int((raw_score / 100) * 10))
+
+    # Risk Category Mapping
+    risk_category = "Safe"
+    if normalized_score >= 9:
         risk_category = "Critical"
-    elif score >= 50:
+    elif normalized_score >= 7:
         risk_category = "High"
-    elif score >= 20:
-        risk_category = "Medium"
-    else:
+    elif normalized_score >= 5:
+        risk_category = "Moderate"
+    elif normalized_score >= 3:
         risk_category = "Low"
 
-    return min(score, 100), risk_category
+    print(f"OTX Risk: {normalized_score} ({risk_category}) from raw {score}")
+    return normalized_score, risk_category
 
 
 def fetch_otx(query, query_type):
     """Fetch OSINT threat intelligence from OTX AlienVault"""
-    print(f"🔍 Fetching OTX AlienVault data for {query} ({query_type})...")
+    print(f"Fetching OTX AlienVault data for {query} ({query_type})...")
 
     try:
         indicator_type = {
@@ -110,7 +209,9 @@ def fetch_otx(query, query_type):
             elif len(query) == 40:
                 indicator_type = IndicatorTypes.FILE_HASH_SHA1
 
-        response = otx_client.get_indicator_details_by_section(indicator_type, query, "general")
+        response = otx_client.get_indicator_details_by_section(
+            indicator_type, query, "general"
+        )
 
         if not response:
             return None
@@ -134,13 +235,13 @@ def fetch_otx(query, query_type):
             "threat_tags": threat_tags,
         }
 
-        # Additional Analysis for URL and Hash
-        if query_type in ["url", "hash"]:
-            analysis = otx_client.get_indicator_details_full(indicator_type, query)
-            parsed_data["analysis"] = analysis.get("analysis", {})
+        analysis = otx_client.get_indicator_details_full(indicator_type, query)
+        parsed_data["analysis"] = analysis.get("analysis", {})
 
         # Calculate Risk Score
-        risk_score, risk_category = calculate_otx_risk_score(pulses, malware_families, parsed_data.get("analysis", {}))
+        risk_score, risk_category = calculate_otx_risk_score(
+            pulses, malware_families, parsed_data.get("analysis", {})
+        )
 
         parsed_data["risk_score"] = risk_score
         parsed_data["risk_category"] = risk_category
@@ -149,7 +250,7 @@ def fetch_otx(query, query_type):
         return parsed_data
 
     except Exception as e:
-        print(f"⚠️ OTX AlienVault Error: {e}")
+        print(f"OTX AlienVault Error: {e}")
         return None
 
 
@@ -186,3 +287,20 @@ def fetch_intelx(query, query_type):
     data = {"term": query, "maxresults": 10, "target": query_type}
     response = requests.post(url, json=data, headers=headers)
     return response.json() if response.status_code == 200 else None
+
+
+def fetch_abuseipdb_blacklist(confidence_minimum: int = 90, limit: int = 100):
+    """Fetch top blacklisted IPs from AbuseIPDB based on confidence score."""
+    url = "https://api.abuseipdb.com/api/v2/blacklist"
+    headers = {"Key": API_KEYS["AbuseIPDB"], "Accept": "application/json"}
+
+    params = {"confidenceMinimum": str(confidence_minimum), "limit": str(limit)}
+
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json().get("data", [])
+        return data[:limit]  # restrict list for performance
+    except Exception as e:
+        print(f"Error fetching blacklist from AbuseIPDB: {e}")
+        return []

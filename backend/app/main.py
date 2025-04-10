@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import osint, darkweb
+from app.routes import osint, darkweb, blacklist
 
 app = FastAPI()
 
@@ -14,6 +14,7 @@ app.add_middleware(
 
 app.include_router(osint.router, prefix="/api")
 app.include_router(darkweb.router, prefix="/api")
+app.include_router(blacklist.router, prefix="/api")
 
 
 @app.get("/")

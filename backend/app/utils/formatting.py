@@ -1,5 +1,8 @@
 from datetime import datetime
-from app.utils.risk_scoring import calculate_osint_risk_score, calculate_darkweb_risk_score
+from app.utils.risk_scoring import (
+    calculate_osint_risk_score,
+    calculate_darkweb_risk_score,
+)
 
 
 from datetime import datetime
@@ -62,18 +65,14 @@ def normalize_osint_data(source, raw_data, query_type):
 
     # Handle VirusTotal Response
     elif source == "VirusTotal":
-        attributes = raw_data.get("data", {}).get("attributes", {})
         normalized_data["data"] = {
-            "last_analysis_date": (
-                datetime.utcfromtimestamp(attributes.get("last_analysis_date", 0)).strftime("%Y-%m-%d %H:%M:%S")
-                if attributes.get("last_analysis_date")
-                else None
-            ),
-            "threat_label": attributes.get("threat_label"),
-            "malicious_votes": attributes.get("last_analysis_stats", {}).get("malicious", 0),
-            "total_votes": attributes.get("last_analysis_stats", {}).get("harmless", 0)
-            + attributes.get("last_analysis_stats", {}).get("malicious", 0),
-            "scan_results": attributes.get("last_analysis_results", {}),
+            "malicious_votes": raw_data.get("malicious_votes", 0),
+            "suspicious_votes": raw_data.get("suspicious_votes", 0),
+            "undetected": raw_data.get("undetected", 0),
+            "harmless": raw_data.get("harmless", 0),
+            "total_scans": raw_data.get("total_scans", 0),
+            "vendor_detections": raw_data.get("vendor_detections", {}),
+            "last_analysis_time": raw_data.get("last_analysis_time"),
         }
 
     return normalized_data
@@ -94,7 +93,9 @@ def normalize_darkweb_data(source, raw_data, query_type):
                 "date": datetime.utcnow().isoformat(),
                 "preview": record.get("preview", "No preview available"),
                 "onion_links": record.get("onion_links", []),
-                "intelx_link": record.get("intelx_link") if source == "IntelX" else None,
+                "intelx_link": (
+                    record.get("intelx_link") if source == "IntelX" else None
+                ),
                 "description": record.get("description", "No details available"),
                 "tags": record.get("tags", []),
                 "first_seen": record.get("first_seen"),
@@ -102,7 +103,9 @@ def normalize_darkweb_data(source, raw_data, query_type):
                 "leaked_data": record.get("leak_data", []),
                 "related_actors": record.get("actors", []),
                 "last_analysis_date": (
-                    datetime.utcfromtimestamp(record.get("timestamp", 0)).strftime("%Y-%m-%d %H:%M:%S")
+                    datetime.utcfromtimestamp(record.get("timestamp", 0)).strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
                     if record.get("timestamp")
                     else None
                 ),
@@ -116,3 +119,30 @@ def normalize_darkweb_data(source, raw_data, query_type):
         "risk_category": risk_category,
         "data": formatted_results,
     }
+
+
+def normalize_abuseipdb_blacklist(raw_list):
+    """Normalize AbuseIPDB Blacklist response to consistent format with scoring."""
+    results = []
+
+    for item in raw_list:
+        ip = item.get("ipAddress")
+        abuse_score = item.get("abuseConfidenceScore", 0)
+
+        raw_data = {"abuse_confidence_score": abuse_score}
+        risk_score, risk_category = calculate_osint_risk_score("AbuseIPDB", raw_data)
+
+        results.append(
+            {
+                "source": "AbuseIPDB",
+                "ip": ip,
+                "risk_score": risk_score,
+                "risk_category": risk_category,
+                "data": {
+                    "abuse_confidence_score": abuse_score,
+                    "last_reported": item.get("lastReportedAt"),
+                },
+            }
+        )
+
+    return results

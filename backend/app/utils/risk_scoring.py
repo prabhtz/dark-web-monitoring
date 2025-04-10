@@ -1,7 +1,7 @@
 def calculate_osint_risk_score(source: str, raw_data: dict):
     """
-    Calculate a risk score (1-100) based on OSINT data.
-    - Uses risk levels from OTX, VirusTotal, IntelX, and other sources.
+    Calculate a normalized risk score (1–10) and category from OSINT data.
+    - Applies source weighting and consistent scoring logic.
     """
 
     print("source", source)
@@ -10,65 +10,72 @@ def calculate_osint_risk_score(source: str, raw_data: dict):
     if not raw_data:
         return 1, "Safe"
 
-    # Source reliability weight mapping
+    # Source reliability weight mapping (0.0–1.0 scale)
     source_weight = {
         "GreyNoise": 0.9,
-        "OTX AlienVault": 0.9,  # More weight since OTX has a stronger scoring model
+        "OTX AlienVault": 0.9,
         "VirusTotal": 0.8,
         "AbuseIPDB": 0.8,
-        "IntelX": 0.5,  # Lower weight due to large aggregated data
+        "IntelX": 0.5,
     }
 
-    # Risk mapping by classification type
-    score_mapping = {
-        "GreyNoise": {"benign": 2, "suspicious": 5, "malicious": 9},
-        "OTX AlienVault": lambda data: data.get("risk_score", 1),  # Uses OTX's calculated risk
-        "VirusTotal": lambda votes: 90 if votes > 10 else 75 if votes > 5 else 50 if votes > 1 else 10,
-    }
+    base_score = 1.0  # Default lowest risk
 
-    base_score = 1  # Default safe score
-
-    # OTX AlienVault Scoring
+    # OTX scoring from internal risk_score already normalized
     if source == "OTX AlienVault":
-        base_score = score_mapping[source](raw_data)  # Uses new OTX scoring
+        raw = raw_data.get("risk_score", 1)
+        base_score = raw if raw < 10 else raw / 10
 
-    # GreyNoise Risk Classification
+    # GreyNoise uses classification
     elif source == "GreyNoise":
-        base_score = score_mapping[source].get(raw_data.get("classification"), 1)
+        base_score = {"benign": 2, "suspicious": 5, "malicious": 9}.get(
+            raw_data.get("classification", "").lower(), 1
+        )
 
-    # VirusTotal Reputation Score
+    # VirusTotal using malicious votes ratio
     elif source == "VirusTotal":
-        base_score = score_mapping[source](raw_data.get("malicious_votes", 0))
+        malicious = raw_data.get("malicious_votes", 0)
+        total = raw_data.get("total_scans", 1)
+        ratio = malicious / total if total else 0
 
-    # IntelX Risk Factor
+        if malicious > 10:
+            base_score = 9
+        elif ratio > 0.5:
+            base_score = 7
+        elif ratio > 0.2:
+            base_score = 5
+        elif ratio > 0.05:
+            base_score = 3
+        else:
+            base_score = 1
+
+    # IntelX based on sensitive data leaks
     elif source == "IntelX":
-        sensitive_data_found = raw_data.get("sensitive_data_count", 0) > 0
-        base_score = 60 if sensitive_data_found else 10
+        base_score = 6 if raw_data.get("sensitive_data_count", 0) > 0 else 1
 
-    # AbuseIPDB Confidence Score
+    # AbuseIPDB based on abuse confidence (0–100)
     elif source == "AbuseIPDB":
         abuse_score = raw_data.get("abuse_confidence_score", 0)
-        normalized_score = (abuse_score / 100) * 10  # Normalize to range 1-10
-        base_score = min(10, max(1, normalized_score))  # Ensure score is within 1-10
+        base_score = round((abuse_score / 100) * 10, 1)
 
-    # Apply weighting factor based on source credibility
-    weighted_score = int(base_score * source_weight.get(source, 1))
+    # Apply credibility-based weight
+    weight = source_weight.get(source, 1.0)
+    weighted_score = round(min(base_score * weight, 10), 1)
 
-    # Risk Categorization
+    # Categorize risk levels
     risk_levels = [
         (8, "Critical"),
         (6, "High"),
         (4, "Moderate"),
         (2, "Low"),
     ]
-
     risk_category = "Safe"
     for threshold, level in risk_levels:
         if weighted_score >= threshold:
             risk_category = level
             break
 
-    return min(weighted_score, 100), risk_category
+    return weighted_score, risk_category
 
 
 def calculate_darkweb_risk_score(source: str, keyword_occurrences: int):

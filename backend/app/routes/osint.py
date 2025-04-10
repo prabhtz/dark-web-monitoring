@@ -1,5 +1,11 @@
 from fastapi import APIRouter, Query
-from app.services.osint import fetch_greynoise, fetch_virustotal, fetch_otx, fetch_abuseipdb, fetch_intelx
+from app.services.osint import (
+    fetch_greynoise,
+    fetch_virustotal,
+    fetch_otx,
+    fetch_abuseipdb,
+    fetch_intelx,
+)
 from app.utils.formatting import normalize_osint_data
 
 router = APIRouter()
@@ -17,8 +23,6 @@ def get_osint_data(
     phone: str = Query(None, description="Phone number to check"),
     breach: str = Query(None, description="Breach event to check"),
 ):
-    """Fetch threat intelligence from multiple OSINT sources using SDKs where available."""
-
     queries = {
         "IP": ip,
         "URL": url,
@@ -39,36 +43,100 @@ def get_osint_data(
                 normalize_osint_data("GreyNoise", fetch_greynoise(ip), "IP"),
                 normalize_osint_data("AbuseIPDB", fetch_abuseipdb(ip), "IP"),
                 normalize_osint_data("OTX AlienVault", fetch_otx(ip, "ip"), "IP"),
+                normalize_osint_data("VirusTotal", fetch_virustotal(ip, "ip"), "IP"),
+                normalize_osint_data("IntelX", fetch_intelx(ip, "ip"), "IP"),
             ]
         )
 
     if url:
-        results.append(normalize_osint_data("VirusTotal", fetch_virustotal(url, "url"), "URL"))
+        results.extend(
+            [
+                normalize_osint_data("OTX AlienVault", fetch_otx(url, "url"), "URL"),
+                normalize_osint_data(
+                    "VirusTotal", fetch_virustotal(url, "url"), "URL"
+                ),
+                normalize_osint_data("IntelX", fetch_intelx(url, "url"), "URL"),
+            ]
+        )
 
     if actor:
-        results.append(normalize_osint_data("OTX AlienVault", fetch_otx(actor, "actor"), "Threat Actor"))
+        results.extend(
+            [
+                normalize_osint_data(
+                    "OTX AlienVault", fetch_otx(actor, "actor"), "Threat Actor"
+                ),
+                normalize_osint_data(
+                    "IntelX", fetch_intelx(actor, "actor"), "Threat Actor"
+                ),
+            ]
+        )
 
     if adversary:
-        results.append(normalize_osint_data("OTX AlienVault", fetch_otx(adversary, "adversary"), "Adversary"))
+        results.extend(
+            [
+                normalize_osint_data(
+                    "OTX AlienVault", fetch_otx(adversary, "adversary"), "Adversary"
+                ),
+                normalize_osint_data(
+                    "IntelX", fetch_intelx(adversary, "adversary"), "Adversary"
+                ),
+            ]
+        )
 
     if hash:
-        results.append(normalize_osint_data("VirusTotal", fetch_virustotal(hash, "hash"), "File Hash"))
+        results.extend(
+            [
+                normalize_osint_data(
+                    "OTX AlienVault", fetch_otx(hash, "hash"), "File Hash"
+                ),
+                normalize_osint_data(
+                    "VirusTotal", fetch_virustotal(hash, "hash"), "File Hash"
+                ),
+                normalize_osint_data(
+                    "IntelX", fetch_intelx(hash, "hash"), "File Hash"
+                ),
+            ]
+        )
 
     if email:
         results.extend(
             [
-                normalize_osint_data("OTX AlienVault", fetch_otx(email, "email"), "Email"),
+                normalize_osint_data(
+                    "OTX AlienVault", fetch_otx(email, "email"), "Email"
+                ),
                 normalize_osint_data("IntelX", fetch_intelx(email, "email"), "Email"),
             ]
         )
 
     if crypto:
-        results.append(normalize_osint_data("OTX AlienVault", fetch_otx(crypto, "crypto"), "Crypto Address"))
+        results.extend(
+            [
+                normalize_osint_data(
+                    "OTX AlienVault", fetch_otx(crypto, "crypto"), "Crypto Address"
+                ),
+                normalize_osint_data(
+                    "IntelX", fetch_intelx(crypto, "crypto"), "Crypto Address"
+                ),
+            ]
+        )
 
     if phone:
-        results.append(normalize_osint_data("IntelX", fetch_intelx(phone, "phone"), "Phone Number"))
+        results.append(
+            normalize_osint_data(
+                "IntelX", fetch_intelx(phone, "phone"), "Phone Number"
+            )
+        )
 
     if breach:
-        results.append(normalize_osint_data("OTX AlienVault", fetch_otx(breach, "breach"), "Breach Event"))
+        results.extend(
+            [
+                normalize_osint_data(
+                    "OTX AlienVault", fetch_otx(breach, "breach"), "Breach Event"
+                ),
+                normalize_osint_data(
+                    "IntelX", fetch_intelx(breach, "breach"), "Breach Event"
+                ),
+            ]
+        )
 
     return {"query": queries, "results": [r for r in results if r]}
