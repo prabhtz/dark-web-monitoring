@@ -289,7 +289,7 @@ def fetch_intelx(query, query_type):
     return response.json() if response.status_code == 200 else None
 
 
-def fetch_abuseipdb_blacklist(confidence_minimum: int = 90, limit: int = 100):
+def fetch_abuseipdb_blacklist(confidence_minimum: int = 90, limit: int = 10):
     """Fetch top blacklisted IPs from AbuseIPDB based on confidence score."""
     url = "https://api.abuseipdb.com/api/v2/blacklist"
     headers = {"Key": API_KEYS["AbuseIPDB"], "Accept": "application/json"}
