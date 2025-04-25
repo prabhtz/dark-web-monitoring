@@ -1,4 +1,4 @@
-# dark-web-monitoring
+# Dark-web-monitoring
 Dark Web Monitoring Tool
 Developed by students of Lambton College Mississauga as a part of capstone project.
 
